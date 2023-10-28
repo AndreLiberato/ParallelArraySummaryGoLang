@@ -16,11 +16,11 @@ func ArrayToString(elements *[]model.Element) {
 }
 
 func ShowResult(result model.Result) {
-	fmt.Println("Soma total dos elementos:", result.AllTotal)
+	fmt.Println("Soma total dos elementos:", result.SumTotal)
 
 	fmt.Println("Soma dos totais dos elementos por grupo:")
 
-	for group, total := range result.SumTotalMap {
+	for group, total := range result.SumTotalByGroup {
 		fmt.Println("Grupo:", group, "; Total:", total)
 	}
 
