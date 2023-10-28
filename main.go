@@ -3,15 +3,25 @@ package main
 import (
 	"ParallelArraySummaryGoLang/logic"
 	"ParallelArraySummaryGoLang/util"
+	"fmt"
+	"os"
+	"strconv"
 )
 
 func main() {
-	var N float64 = 10
-	// var T int = 10
+	args := os.Args
+	N, errf := strconv.ParseFloat(args[1], 64)
+	T, errui := strconv.ParseUint(args[2], 10, 64)
 
-	listElements := util.LoadElements(N)
+	if errf != nil {
+		fmt.Println("Erro ao converter a string em ponto flutuante:", errf)
+	}
 
-	result := logic.Process(&listElements)
+	if errui != nil {
+		fmt.Println("Erro ao converter a string em ponto inteiro não assinado:", errui)
+	}
 
-	util.ShowResult(result)
+	result := logic.StartProcess(N, T)
+
+	util.ShowResult(*result)
 }
