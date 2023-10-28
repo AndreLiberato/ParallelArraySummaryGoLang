@@ -1,13 +1,16 @@
 package logic
 
-import "ParallelArraySummaryGoLang/model"
+import (
+	"ParallelArraySummaryGoLang/model"
+	"sync"
+)
 
 func SumTotal(elements *[]model.Element) float64 {
-	var allTotal float64 = 0
-	for _, indTotal := range *elements {
-		allTotal += indTotal.Total
+	var total float64 = 0
+	for _, element := range *elements {
+		total += element.Total
 	}
-	return allTotal
+	return total
 }
 
 func SumTotalByGroup(elements *[]model.Element) map[uint8]float64 {
@@ -44,11 +47,12 @@ func FilterIdByTotalGreaterOrEqualToFive(elements *[]model.Element) []uint64 {
 	return idsGreaterOrEqualToFive
 }
 
-func Process(elements *[]model.Element) model.Result {
+func Process(elements *[]model.Element, waitGroup *sync.WaitGroup, resultChan chan<- model.Result) {
+	defer waitGroup.Done()
 	result := model.Result{}
-	result.AllTotal = SumTotal(elements)
-	result.SumTotalMap = SumTotalByGroup(elements)
+	result.SumTotal = SumTotal(elements)
+	result.SumTotalByGroup = SumTotalByGroup(elements)
 	result.IdsLessThanFive = FilterIDByTotalLessThanFive(elements)
 	result.IdsGreaterOrEqualToFive = FilterIdByTotalGreaterOrEqualToFive(elements)
-	return result
+	resultChan <- result
 }
