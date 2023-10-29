@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"ParallelArraySummaryGoLang/model"
+	"ParallelArraySummary/model"
 	"sync"
 )
 
@@ -45,6 +45,21 @@ func FilterIdByTotalGreaterOrEqualToFive(elements *[]model.Element) []uint64 {
 	}
 
 	return idsGreaterOrEqualToFive
+}
+
+func getFinalResult(partialResults chan model.Result) *model.Result {
+	finalResult := model.Result{}
+	finalResult.SumTotalByGroup = map[uint8]float64{1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+
+	for partialResult := range partialResults {
+		finalResult.SumTotal += partialResult.SumTotal
+		for group, partialSumByGroup := range partialResult.SumTotalByGroup {
+			finalResult.SumTotalByGroup[group] += partialSumByGroup
+		}
+		finalResult.IdsLessThanFive = append(finalResult.IdsLessThanFive, partialResult.IdsLessThanFive...)
+		finalResult.IdsGreaterOrEqualToFive = append(finalResult.IdsGreaterOrEqualToFive, partialResult.IdsGreaterOrEqualToFive...)
+	}
+	return &finalResult
 }
 
 func Process(elements *[]model.Element, waitGroup *sync.WaitGroup, resultChan chan<- model.Result) {

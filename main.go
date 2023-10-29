@@ -1,10 +1,12 @@
 package main
 
 import (
-	"ParallelArraySummaryGoLang/logic"
-	"ParallelArraySummaryGoLang/util"
+	"ParallelArraySummary/logic"
+	"ParallelArraySummary/util"
 	"fmt"
+	"log"
 	"os"
+	"runtime/pprof"
 	"strconv"
 )
 
@@ -20,6 +22,13 @@ func main() {
 	if errui != nil {
 		fmt.Println("Erro ao converter a string em ponto inteiro não assinado:", errui)
 	}
+
+	f, err := os.Create("execution_info.prof")
+	if err != nil {
+		log.Fatal(err)
+	}
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
 
 	result := logic.StartProcess(N, T)
 
