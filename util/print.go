@@ -1,8 +1,9 @@
 package util
 
 import (
-	"ParallelArraySummaryGoLang/model"
+	"ParallelArraySummary/model"
 	"fmt"
+	"strings"
 )
 
 func ToString(element *model.Element) {
@@ -24,11 +25,15 @@ func ShowResult(result model.Result) {
 		fmt.Println("Grupo:", group, "; Total:", total)
 	}
 
-	// fmt.Println("Id's dos elementos menores que cinco:")
+	fmt.Println("Id's dos elementos menores que cinco:")
 
-	// fmt.Println(strings.Join(strings.Fields(fmt.Sprint(result.IdsLessThanFive)), ", "))
+	fmt.Println(strings.Join(strings.Fields(fmt.Sprint(result.IdsLessThanFive)), ", "))
 
-	// fmt.Println("Id's dos elementos maiores ou iguais a cinco:")
+	fmt.Println("Id's dos elementos maiores ou iguais a cinco:")
 
-	// fmt.Println(strings.Join(strings.Fields(fmt.Sprint(result.IdsGreaterOrEqualToFive)), ", "))
+	fmt.Println(strings.Join(strings.Fields(fmt.Sprint(result.IdsGreaterOrEqualToFive)), ", "))
+}
+
+func PrintLine() {
+	fmt.Println("-------------------------------------------------")
 }
