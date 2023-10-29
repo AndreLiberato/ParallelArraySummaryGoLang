@@ -1,51 +1,70 @@
 package logic
 
 import (
-	"ParallelArraySummaryGoLang/model"
-	"ParallelArraySummaryGoLang/util"
+	"ParallelArraySummary/model"
+	"ParallelArraySummary/util"
 	"fmt"
 	"math"
 	"sync"
 	"time"
 )
 
+func alocateElements(numberElements uint64) *[]model.Element {
+	fmt.Println("Inciando alocação de recursos.")
+	startExecution := time.Now()
+	elements := make([]model.Element, numberElements)
+	endExecution := time.Now()
+	fmt.Println("Alocação terminada. Duração(ms)", util.CalculateExecutionTime(startExecution, endExecution))
+	util.PrintLine()
+	return &elements
+}
+
+func generateElementes(elements *[]model.Element, T uint64) *[]*[]model.Element {
+	fmt.Println("Preparando dados para execução.")
+	startExecution := time.Now()
+	sliceElements := util.PrepareElements(elements, T)
+	endExecution := time.Now()
+	fmt.Println("Preparação terminada. Duração(ms):", util.CalculateExecutionTime(startExecution, endExecution))
+	util.PrintLine()
+	return sliceElements
+}
+
+func runProcess(sliceElements *[]*[]model.Element, T uint64, processWaitGroup *sync.WaitGroup, partialResults chan<- model.Result) {
+	fmt.Println("Iniciando processamento dos dados.")
+	startExecution := time.Now()
+	for i := uint64(0); i < T; i++ {
+		processWaitGroup.Add(1)
+		go Process((*sliceElements)[i], processWaitGroup, partialResults)
+	}
+	processWaitGroup.Wait()
+	close(partialResults)
+	endExecution := time.Now()
+	fmt.Println("Processamento de dados terminados. Duração(ms):", util.CalculateExecutionTime(startExecution, endExecution))
+	util.PrintLine()
+}
+
+func finalProcess(partialResults chan model.Result) *model.Result {
+	fmt.Println("Iniciando processamento final dos dados")
+	startExecution := time.Now()
+	finalResult := getFinalResult(partialResults)
+	endExecution := time.Now()
+	fmt.Println("Processamento final de dados terminados. Duração(ms):", util.CalculateExecutionTime(startExecution, endExecution))
+	util.PrintLine()
+	return finalResult
+}
+
 func StartProcess(N float64, T uint64) *model.Result {
-	var waitGroup sync.WaitGroup
+	var processWaitGroup sync.WaitGroup
+	numberElements := uint64(math.Pow(10, N))
+	elements := alocateElements(numberElements)
+
+	sliceElements := generateElementes(elements, T)
+
 	partialResults := make(chan model.Result, int(T))
 
-	elements := util.LoadElements(uint64(math.Pow(10, N)))
+	runProcess(sliceElements, T, &processWaitGroup, partialResults)
 
-	sliceElements := util.SliceElements(elements, T)
+	finalResult := finalProcess(partialResults)
 
-	startTime := time.Now()
-
-	for i := 0; i < len(*sliceElements); i++ {
-		waitGroup.Add(1)
-		go Process(&(*sliceElements)[i], &waitGroup, partialResults)
-	}
-
-	waitGroup.Wait()
-
-	close(partialResults)
-
-	finalResult := model.Result{}
-	finalResult.SumTotalByGroup = map[uint8]float64{1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
-
-	for partialResult := range partialResults {
-		finalResult.SumTotal += partialResult.SumTotal
-		for group, partialSumByGroup := range partialResult.SumTotalByGroup {
-			finalResult.SumTotalByGroup[group] += partialSumByGroup
-		}
-		finalResult.IdsLessThanFive = append(finalResult.IdsLessThanFive, partialResult.IdsLessThanFive...)
-		finalResult.IdsGreaterOrEqualToFive = append(finalResult.IdsGreaterOrEqualToFive, partialResult.IdsGreaterOrEqualToFive...)
-	}
-	endTime := time.Now()
-
-	totalTime := endTime.Sub(startTime)
-
-	timeInMilliseconds := totalTime.Milliseconds()
-
-	fmt.Println("Duração total do processamento:", timeInMilliseconds, "ms")
-
-	return &finalResult
+	return finalResult
 }
