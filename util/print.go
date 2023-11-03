@@ -3,6 +3,8 @@ package util
 import (
 	"ParallelArraySummary/model"
 	"fmt"
+	"log"
+	"os"
 	"strings"
 )
 
@@ -25,13 +27,27 @@ func ShowResult(result model.Result) {
 		fmt.Println("Grupo:", group, "; Total:", total)
 	}
 
-	fmt.Println("Id's dos elementos menores que cinco:")
+	idLess, err := os.Create("id_less_five.csv")
+	if err != nil {
+		log.Fatalf("An error occurred with file creation: %v", err)
+	}
+	defer idLess.Close()
 
-	fmt.Println(strings.Join(strings.Fields(fmt.Sprint(result.IdsLessThanFive)), ", "))
+	fmt.Println("Escrevendo os id's dos elementos menores que cinco:", len(result.IdsLessThanFive), "elementos.")
 
-	fmt.Println("Id's dos elementos maiores ou iguais a cinco:")
+	idLess.WriteString(strings.Join(strings.Fields(fmt.Sprint(result.IdsLessThanFive)), "\n"))
 
-	fmt.Println(strings.Join(strings.Fields(fmt.Sprint(result.IdsGreaterOrEqualToFive)), ", "))
+	idGreater, err := os.Create("id_greater_five.csv")
+	if err != nil {
+		log.Fatalf("An error occurred with file creation: %v", err)
+	}
+	defer idLess.Close()
+
+	fmt.Println("Escrevendo id's dos elementos maiores ou iguais a cinco:", len(result.IdsGreaterOrEqualToFive), "elementos.")
+
+	idGreater.WriteString(strings.Join(strings.Fields(fmt.Sprint(result.IdsGreaterOrEqualToFive)), "\n"))
+
+	fmt.Println("Elementos registrados: ", (len(result.IdsLessThanFive) + len(result.IdsGreaterOrEqualToFive)))
 }
 
 func PrintLine() {
