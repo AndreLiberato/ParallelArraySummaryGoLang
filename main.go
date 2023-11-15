@@ -1,36 +1,29 @@
 package main
 
 import (
+	"ParallelArraySummary/handler"
 	"ParallelArraySummary/logic"
-	"ParallelArraySummary/util"
 	"fmt"
-	"log"
 	"os"
-	"runtime/pprof"
 	"strconv"
+	"time"
 )
 
 func main() {
+	startTime := time.Now() // Marcador de tempo de início do programa
+
 	args := os.Args
-	N, errf := strconv.ParseFloat(args[1], 64)
-	T, errui := strconv.ParseUint(args[2], 10, 64)
+	N, errf := strconv.ParseFloat(args[1], 64) // N expoente
+	handler.Chk("Erro ao converter a string em ponto flutuante:", errf)
 
-	if errf != nil {
-		fmt.Println("Erro ao converter a string em ponto flutuante:", errf)
-	}
+	T, errui := strconv.ParseUint(args[2], 10, 64) // Número de threads
+	handler.Chk("Erro ao converter a string em inteiro:", errui)
 
-	if errui != nil {
-		fmt.Println("Erro ao converter a string em ponto inteiro não assinado:", errui)
-	}
+	logic.StartProcess(N, T) //Inicio do processo
 
-	f, err := os.Create("execution_info.prof")
-	if err != nil {
-		log.Fatal(err)
-	}
-	pprof.StartCPUProfile(f)
-	defer pprof.StopCPUProfile()
+	endTime := time.Now() // Marcador de tempo de fim do programa
 
-	result := logic.StartProcess(N, T)
+	programDurationTime := endTime.Sub(startTime).Milliseconds()
 
-	util.ShowResult(*result)
+	fmt.Println("Duração da execução total do programa:", programDurationTime)
 }
