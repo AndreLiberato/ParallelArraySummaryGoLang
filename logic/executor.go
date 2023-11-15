@@ -2,69 +2,41 @@ package logic
 
 import (
 	"ParallelArraySummary/model"
-	"ParallelArraySummary/util"
 	"fmt"
 	"math"
 	"sync"
 	"time"
 )
 
-func alocateElements(numberElements uint64) *[]model.Element {
-	fmt.Println("Inciando alocação de recursos.")
-	startExecution := time.Now()
-	elements := make([]model.Element, numberElements)
-	endExecution := time.Now()
-	fmt.Println("Alocação terminada. Duração(ms)", util.CalculateExecutionTime(startExecution, endExecution))
-	util.PrintLine()
-	return &elements
-}
-
-func generateElementes(elements *[]model.Element, T uint64) *[]*[]model.Element {
-	fmt.Println("Preparando dados para execução.")
-	startExecution := time.Now()
-	sliceElements := util.PrepareElements(elements, T)
-	endExecution := time.Now()
-	fmt.Println("Preparação terminada. Duração(ms):", util.CalculateExecutionTime(startExecution, endExecution))
-	util.PrintLine()
-	return sliceElements
-}
-
+// runProcess é a função responsável por iniciar as goroutines do processamento dos elementos
 func runProcess(sliceElements *[]*[]model.Element, T uint64, processWaitGroup *sync.WaitGroup, partialResults chan<- model.Result) {
-	fmt.Println("Iniciando processamento dos dados.")
-	startExecution := time.Now()
+	defer close(partialResults)
 	for i := uint64(0); i < T; i++ {
 		processWaitGroup.Add(1)
 		go Process((*sliceElements)[i], processWaitGroup, partialResults)
 	}
 	processWaitGroup.Wait()
-	close(partialResults)
-	endExecution := time.Now()
-	fmt.Println("Processamento de dados terminados. Duração(ms):", util.CalculateExecutionTime(startExecution, endExecution))
-	util.PrintLine()
 }
 
-func finalProcess(partialResults chan model.Result) *model.Result {
-	fmt.Println("Iniciando processamento final dos dados")
-	startExecution := time.Now()
-	finalResult := getFinalResult(partialResults)
-	endExecution := time.Now()
-	fmt.Println("Processamento final de dados terminados. Duração(ms):", util.CalculateExecutionTime(startExecution, endExecution))
-	util.PrintLine()
-	return finalResult
-}
+// StartProcess é a função responsável pelo fluxo de processamento principal do programa
+func StartProcess(N float64, T uint64) {
+	var processWaitGroup sync.WaitGroup // Variável de sincronização final
 
-func StartProcess(N float64, T uint64) *model.Result {
-	var processWaitGroup sync.WaitGroup
-	numberElements := uint64(math.Pow(10, N))
-	elements := alocateElements(numberElements)
+	numberElements := uint64(math.Pow(10, N)) // Número de elementos
 
-	sliceElements := generateElementes(elements, T)
+	sliceElements := PrepareElements(numberElements, T) // Gera os elementos por thread
 
-	partialResults := make(chan model.Result, int(T))
+	partialResults := make(chan model.Result, T) // Canal de resultados parciais
+
+	startTime := time.Now() // Marcador de tempo de inicio do processamento dos elementos
 
 	runProcess(sliceElements, T, &processWaitGroup, partialResults)
 
-	finalResult := finalProcess(partialResults)
+	getFinalResult(partialResults) // Resolve todos os resultados parciais em só um resultado
 
-	return finalResult
+	endTime := time.Now() // Marcador de tempo de final do processamento dos elementos
+
+	totalTime := endTime.Sub(startTime).Milliseconds() // Tempo total do processamento dos elementos
+
+	fmt.Println("Tempo de processamento total dos elementos:", totalTime)
 }
