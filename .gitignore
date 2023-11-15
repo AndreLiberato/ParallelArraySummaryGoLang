@@ -25,11 +25,5 @@ ParallelArraySummary
 # Go workspace file
 go.work
 
-# Profiling files
-*.prof
-
-# Id files
-id_less_five.csv
-id_greater_five.csv
 
 # End of https://www.toptal.com/developers/gitignore/api/go
