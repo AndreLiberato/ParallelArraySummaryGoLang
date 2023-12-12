@@ -24,7 +24,7 @@ func StartProcess(N float64, T uint64) {
 
 	numberElements := uint64(math.Pow(10, N)) // Número de elementos
 
-	sliceElements := PrepareElements(numberElements, T) // Gera os elementos por thread
+	sliceElements := PrepareElementsLinear(numberElements, T)
 
 	partialResults := make(chan model.Result, T) // Canal de resultados parciais
 

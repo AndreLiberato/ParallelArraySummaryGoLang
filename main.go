@@ -5,11 +5,18 @@ import (
 	"ParallelArraySummary/logic"
 	"fmt"
 	"os"
+	"runtime/pprof"
 	"strconv"
 	"time"
 )
 
 func main() {
+	fcpu, err := os.Create("cpu.prof")
+	handler.Chk("Erro ao criar o arquivo de prof", err)
+	defer fcpu.Close()
+	pprof.StartCPUProfile(fcpu)
+	defer pprof.StopCPUProfile()
+
 	startTime := time.Now() // Marcador de tempo de início do programa
 
 	args := os.Args
@@ -26,4 +33,9 @@ func main() {
 	programDurationTime := endTime.Sub(startTime).Milliseconds()
 
 	fmt.Println("Duração da execução total do programa:", programDurationTime)
+
+	fmem, err := os.Create("mem.prof")
+	handler.Chk("Erro ao criar o arquivo de prof", err)
+	defer fmem.Close()
+	pprof.WriteHeapProfile(fmem)
 }

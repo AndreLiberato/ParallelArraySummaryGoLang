@@ -7,56 +7,51 @@ import (
 
 // SumTotal efetua a soma dos totais de todos os elementos do array
 func SumTotal(elements *[]model.Element) float64 {
-	var total float64 = 0
+	countTotal := float64(0)
 	for _, element := range *elements {
-		total += element.Total
+		countTotal += element.Total
 	}
-	return total
+	return countTotal
 }
 
 // SumTotalByGroup efetua a soma dos totais dos elementos por grupo
-func SumTotalByGroup(elements *[]model.Element) map[uint8]float64 {
-	sumTotalMap := map[uint8]float64{1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+func SumTotalByGroup(elements *[]model.Element) []float64 {
+	sumtTotal := []float64{0, 0, 0, 0, 0}
 	for _, element := range *elements {
-		sumTotalMap[element.Group] += element.Total
+		sumtTotal[element.Group-1] += element.Total
 	}
-	return sumTotalMap
+	return sumtTotal
 }
 
-// FilterIDByTotalLessThanFive sepera em um aray os ids dos elementos que tem o total são menores do que cinco
-func FilterIdByTotalLessThanFive(elements *[]model.Element) []uint64 {
-	var idsLessThanFive []uint64
-	for _, element := range *elements {
-		if element.Total < 5 {
-			idsLessThanFive = append(idsLessThanFive, element.Id)
-		}
-	}
-	return idsLessThanFive
-}
-
-// FilterIdByTotalGreaterOrEqualToFive separa em um array os ids dos elementos que tem o total maior ou igual que cinco
-func FilterIdByTotalGreaterOrEqualToFive(elements *[]model.Element) []uint64 {
-	var idsGreaterOrEqualToFive []uint64
+func CountTotals(elements *[]model.Element) (uint64, uint64) {
+	countTotalLessThanFive := uint64(0)
+	countTotalGreaterOrEqualToFive := uint64(0)
 	for _, element := range *elements {
 		if element.Total >= 5 {
-			idsGreaterOrEqualToFive = append(idsGreaterOrEqualToFive, element.Id)
+			countTotalGreaterOrEqualToFive++
+		} else {
+			countTotalLessThanFive++
 		}
 	}
-	return idsGreaterOrEqualToFive
+	return countTotalLessThanFive, countTotalGreaterOrEqualToFive
 }
 
 // getFinalResult é a função responsável por processar os resultados parciais dos elementos e gerar o resultado final
 func getFinalResult(partialResults chan model.Result) {
-	finalResult := model.Result{}
-	finalResult.SumTotalByGroup = map[uint8]float64{1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+	finalResult := model.Result{
+		SumTotal:                       0,
+		SumTotalByGroup:                []float64{0, 0, 0, 0, 0},
+		IdsLessThanFiveCounter:         0,
+		IdsGreaterOrEqualToFiveCounter: 0,
+	}
 
 	for partialResult := range partialResults {
 		finalResult.SumTotal += partialResult.SumTotal
 		for group, partialSumByGroup := range partialResult.SumTotalByGroup {
 			finalResult.SumTotalByGroup[group] += partialSumByGroup
 		}
-		finalResult.IdsLessThanFive = append(finalResult.IdsLessThanFive, partialResult.IdsLessThanFive...)
-		finalResult.IdsGreaterOrEqualToFive = append(finalResult.IdsGreaterOrEqualToFive, partialResult.IdsGreaterOrEqualToFive...)
+		finalResult.IdsLessThanFiveCounter += partialResult.IdsLessThanFiveCounter
+		finalResult.IdsGreaterOrEqualToFiveCounter += partialResult.IdsGreaterOrEqualToFiveCounter
 	}
 }
 
@@ -64,9 +59,10 @@ func getFinalResult(partialResults chan model.Result) {
 func Process(elements *[]model.Element, waitGroup *sync.WaitGroup, resultChan chan<- model.Result) {
 	defer waitGroup.Done()
 	result := model.Result{}
+
 	result.SumTotal = SumTotal(elements)
 	result.SumTotalByGroup = SumTotalByGroup(elements)
-	result.IdsLessThanFive = FilterIdByTotalLessThanFive(elements)
-	result.IdsGreaterOrEqualToFive = FilterIdByTotalGreaterOrEqualToFive(elements)
+	result.IdsLessThanFiveCounter, result.IdsGreaterOrEqualToFiveCounter = CountTotals(elements)
+
 	resultChan <- result
 }

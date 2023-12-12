@@ -3,56 +3,33 @@ package logic
 import (
 	"ParallelArraySummary/model"
 	"ParallelArraySummary/random"
-	"sync"
 )
 
 // loadElements é a função responsável por gerar o array de elementos aleatórios para cada thread
-func loadElements(sliceElements **[]model.Element, listSize uint64, idCounter *uint64, waitGroup *sync.WaitGroup, idMutex *sync.Mutex) {
-	defer waitGroup.Done()                  // Pornto de sincronia
-	list := make([]model.Element, listSize) // Alocação do array de elementos
-	for i := uint64(0); i < listSize; i++ {
-		list[i].Id = getNextID(idCounter, idMutex)
-		list[i].Total = random.GenerateValue()
-		list[i].Group = random.GenerateGroup()
+func loadElements(subListSize uint64, idCounter uint64) *[]model.Element {
+	subList := make([]model.Element, subListSize)
+	for j := uint64(0); j < subListSize; j++ {
+		idCounter++
+		subList[j].Id = idCounter
+		subList[j].Total = random.GenerateValue()
+		subList[j].Group = random.GenerateGroup()
 	}
-	*sliceElements = &list
-}
-
-// getNextID é a função responsável por gerar o próximo id sequencial
-func getNextID(idCounter *uint64, idMutex *sync.Mutex) uint64 {
-	idMutex.Lock()   // Bloqueia o recurso
-	*idCounter += 1  // Adiciona + 1
-	idMutex.Unlock() // Desbloqueia o recurso
-	return *idCounter
+	return &subList
 }
 
 // PrepareElements é a função responsável por criar os elementos por thread de maneira equilibrada
-func PrepareElements(numberElements uint64, T uint64) *[]*[]model.Element {
-	chunkSize := numberElements / T // Quantidade de elementos por thread
-
-	extraElements := numberElements % T // Quantidade de elementos restantes
-
-	var loadElementsWaitGroup sync.WaitGroup // Variaǘel de sincronia final do carregamento
-
-	var idMutex sync.Mutex // Mutex para geração sequencial de ids
-
-	var idCounter uint64 // Contador de ids
-
-	var sliceElements []*[]model.Element = make([]*[]model.Element, T) // Array de ponteiros para arrays de Element. Armazena um ponteiro para array por thread.
-
+func PrepareElementsLinear(numberElements uint64, T uint64) *[]*[]model.Element {
+	chunkSize := numberElements / T              // Quantidade de elementos por thread
+	extraElements := numberElements % T          // Quantidade de elementos restantes
+	sliceElements := make([]*[]model.Element, T) // Array de ponteiros para arrays de Element. Armazena um ponteiro para array por thread.
+	idCounter := uint64(0)
 	for i := uint64(0); i < T; i++ {
-		loadElementsWaitGroup.Add(1)
-
 		subListSize := chunkSize
 		if i < extraElements {
 			subListSize++
 		}
-
-		// Inicia as goroutines
-		go loadElements(&sliceElements[i], subListSize, &idCounter, &loadElementsWaitGroup, &idMutex)
+		sliceElements[i] = loadElements(subListSize, idCounter)
+		idCounter += subListSize
 	}
-
-	loadElementsWaitGroup.Wait() // Espera o término da geração de elementos
-
 	return &sliceElements
 }
